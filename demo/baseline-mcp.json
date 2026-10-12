@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "memoryvault_baseline": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["--import", "tsx", "src/mcp.ts"],
+      "env": { "MEMORYVAULT_MODE": "baseline" }
+    }
+  }
+}

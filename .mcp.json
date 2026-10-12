@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "memoryvault": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "--env-file=.env.local",
+        "--import",
+        "tsx",
+        "src/mcp.ts"
+      ],
+      "env": {
+        "MEMORYVAULT_MODE": "protected"
+      }
+    }
+  }
+}

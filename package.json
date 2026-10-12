@@ -1,0 +1,25 @@
+{
+  "name": "memoryvault",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --import tsx --test src/**/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "mcp": "tsx src/mcp.ts",
+    "hook": "tsx src/hook.ts",
+    "dashboard": "node --env-file=.env.local --import tsx src/dashboard.ts",
+    "eval": "tsx src/eval.ts",
+    "setup": "tsx scripts/setup-hosted.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "^2.3.1",
+    "@supabase/supabase-js": "^2.117.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^6.0.0"
+  }
+}

@@ -1,0 +1,22 @@
+# Generated and collected documentation for the MemoryVault work.
+/references/memoryvault/
+/memoryvault-documentation.md
+/track-3-secure-attack-defend-the-agent.md
+
+# PDFs and LaTeX source anywhere in the repository.
+*.pdf
+*.tex
+/fixtures/*.aux
+/fixtures/*.log
+
+# Temporary PDF render and LaTeX build files.
+/tmp/pdfs/
+
+# Local app dependencies and credentials.
+/node_modules/
+/.env
+/.env.*
+!/example.env
+/supabase/.branches/
+/supabase/.profiles/
+/supabase/.temp/
