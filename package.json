@@ -10,7 +10,8 @@
     "hook": "tsx src/hook.ts",
     "dashboard": "node --env-file=.env.local --import tsx src/dashboard.ts",
     "eval": "tsx src/eval.ts",
-    "setup": "tsx scripts/setup-hosted.ts"
+    "setup": "tsx scripts/setup-hosted.ts",
+    "broker": "node --import tsx src/broker.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "^2.3.1",
@@ -18,6 +19,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.9",
     "@types/node": "^22.0.0",
     "tsx": "^4.0.0",
     "typescript": "^6.0.0"

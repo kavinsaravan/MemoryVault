@@ -39,7 +39,12 @@ export function validMemoryValue(key: string, value: string): boolean {
 }
 
 export function authoredPrompt(prompt: string): string {
-  return prompt.replace(/<pasted_content\b[^>]*>[\s\S]*?<\/pasted_content>/giu, " ");
+  return prompt
+    .replace(/<pasted_content\b[^>]*>[\s\S]*?(?:<\/pasted_content>|$)/giu, " ")
+    .replace(/```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)/gu, " ")
+    .replace(/^\s*>.*$/gmu, " ")
+    .replace(/"[^"]*(?:"|$)|“[^”]*(?:”|$)|`[^`]*(?:`|$)/gmu, " ")
+    .replace(/(?:^|\s)'[^']*(?:'|$)|‘[^’]*(?:’|$)/gmu, " ");
 }
 
 function normalized(input: string): string {
@@ -76,11 +81,16 @@ function overlaps(value: string, content: string): boolean {
 
 function userAuthorizes(key: string, value: string, prompt: string): boolean {
   const authored = normalized(authoredPrompt(prompt));
+  // Requests to inspect external content are ambiguous even without delimiters.
+  if (/\b(?:summarize|analyse|analyze|translate|quote|review|explain)\b/iu.test(authored)) return false;
   const target = normalized(value);
   const index = authored.lastIndexOf(target);
   if (index < 0) return false;
   const clause = authored.slice(Math.max(0, authored.lastIndexOf(".", index) + 1), index + target.length);
   if (/\b(?:do not|don't|never|stop|remove|exclude|without|not to)\b/iu.test(clause)) return false;
+  // Authority must begin as a direct request, not arbitrary reported speech.
+  const prefix = clause.slice(0, -target.length).trim();
+  if (!/^(?:(?:please|always|from now on[, ]*|for (?:future|all) reports[, ]*)\s*)*(?:i\s+)?(?:cc|send|add|include|copy|use|format|prefer|set|remember|save)\b/iu.test(prefix)) return false;
   if (key === "cc" || key === "report_recipients") {
     return /\b(?:cc|send|add|include|copy)\b[^.]{0,100}$/iu.test(clause.slice(0, -target.length));
   }
@@ -114,6 +124,11 @@ export function evaluateWrite(input: {
   }
   steps.push({ rule: "WG-04", matched: false });
 
+  const latestPrompt = [...input.ledger].reverse().find(event => event.kind === "user_message");
+  if (latestPrompt && overlaps(value, latestPrompt.content) && !overlaps(value, authoredPrompt(latestPrompt.content))) {
+    steps.push({ rule: "WG-02", matched: true, evidence: "quoted or embedded user-message content" });
+    return { key: input.key, value, status: "quarantined", origin: "document", originRef: latestPrompt.id, rule: "WG-02", steps };
+  }
   const untrusted = input.ledger.filter(event => event.kind === "untrusted_read");
   const matchedRead = untrusted.find(event => overlaps(value, event.content));
   if (matchedRead) {

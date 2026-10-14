@@ -20,3 +20,7 @@
 /supabase/.branches/
 /supabase/.profiles/
 /supabase/.temp/
+
+!/example.agent.env
+!/example.hook.env
+!/example.server.env
