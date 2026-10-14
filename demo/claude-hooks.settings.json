@@ -1,16 +1,70 @@
 {
   "hooks": {
     "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "node", "args": ["--import", "tsx", "src/hook.ts"], "onFailure": "block" }] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "--import",
+              "tsx",
+              "src/hook.ts"
+            ],
+            "onFailure": "block"
+          }
+        ]
+      }
     ],
     "UserPromptSubmit": [
-      { "hooks": [{ "type": "command", "command": "node", "args": ["--import", "tsx", "src/hook.ts"], "onFailure": "block" }] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "--import",
+              "tsx",
+              "src/hook.ts"
+            ],
+            "onFailure": "block"
+          }
+        ]
+      }
     ],
     "PostToolUse": [
-      { "matcher": "Read|WebFetch|WebSearch|Bash|mcp__.*", "hooks": [{ "type": "command", "command": "node", "args": ["--import", "tsx", "src/hook.ts"], "onFailure": "block" }] }
+      {
+        "matcher": "Read|WebFetch|WebSearch|Bash|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "--import",
+              "tsx",
+              "src/hook.ts"
+            ],
+            "onFailure": "block"
+          }
+        ]
+      }
     ],
     "PreToolUse": [
-      { "matcher": "Write|Edit|MultiEdit|Bash|mcp__memoryvault__.*", "hooks": [{ "type": "command", "command": "node", "args": ["--import", "tsx", "src/hook.ts"], "onFailure": "block" }] }
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash|mcp__memoryvault__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "--import",
+              "tsx",
+              "src/hook.ts"
+            ],
+            "onFailure": "block"
+          }
+        ]
+      }
     ]
   }
 }
