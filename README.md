@@ -1,104 +1,78 @@
+> Portfolio update: see [PORTFOLIO_SETUP.md](PORTFOLIO_SETUP.md) for the trusted broker configuration, lineage inspector, and cascading revocation. The older hackathon commands below assume direct database access and are superseded for agent-side MCP/hooks.
+
 # MemoryVault
 
-MemoryVault adds provenance, review, and containment controls to persistent AI-agent memory. It helps stop instructions from an external document from becoming trusted preferences that affect later sessions.
+MemoryVault demonstrates a persistent-memory prompt injection defense for the CrowdStrike Hackathon Track 3 brief. A poisoned document tries to save an unauthorized report recipient. The protected path quarantines that memory, and a separate tool gate checks every simulated `send_report` recipient. The Outbox is stored in Supabase Postgres; no email is sent.
 
-An example attack hides an external report recipient in a document. MemoryVault quarantines the proposed memory, records its source, and checks outgoing report recipients independently. A reviewer can inspect the memory's lineage, see which sessions and actions used it, and revoke it together with its descendants.
+## Build phases
 
-`send_report` simulates delivery and records an Outbox receipt. It does not send real email. The evaluation runner measures deterministic policy behavior, not live-model attack uptake.
+1. **Data and rules:** Supabase migration, provenance ledger, deterministic write and tool gates, and a separate vulnerable baseline table.
+2. **Agent integration:** one stdio MCP server and Claude Code hooks for prompts, document/tool reads, session recall, and memory-file writes.
+3. **Review and replay:** authenticated approval dashboard, synthetic PDF fixture, and a repeated policy replay harness.
 
-## Architecture
+The code for these phases is present. The replay harness drives the gates directly; a repeated live Claude Code attack run and backup demo video remain to be done.
 
-```text
-Claude Code → MCP adapter → trusted broker → write/tool gates → Supabase
-Trusted hooks → broker → provenance ledger and session recall
-Human dashboard → Supabase Auth/RLS → review, inspection, and revocation
-```
+## Setup (one shared hosted database)
 
-- **Write gate:** validates typed values and checks independently recorded provenance. Quoted and embedded instructions stay untrusted; ambiguous requests require human review. Declared summaries inherit parent trust.
-- **Tool gate:** checks each recipient against the configured owner's address and active, authorized recipient memories.
-- **Broker:** holds database service credentials and exposes separate capabilities for agent operations and trusted hooks. Agent clients refuse inherited database service keys.
-- **Dashboard:** provides authenticated approval/rejection, source and lineage inspection, usage timelines, cascading revocation, and read-only email-based sharing of selected active memories.
-- **Database:** enforces ownership through RLS, active-parent constraints, immutable memory content/provenance, and transactional descendant revocation.
+Everyone uses the same hosted Supabase project, so there is no local database. Requires Node 22+ and (for the PDF fixture) `pdflatex` and `pdftotext`.
 
-Memory keys: `report_recipients`, `cc`, `report_format`, `writing_tone`, `timezone`, `project_context`, and `personal_preference`. Only the recipient keys can authorize additional report recipients. Sharing a memory with a reader does not grant permission to send that reader reports.
-
-## Development setup
-
-Requires Node.js 22+ and a Supabase database with Auth enabled. Install dependencies:
-
-```bash
-npm ci
-```
-
-Apply every migration in `supabase/migrations/` in order to a development database. If using the Supabase CLI with a hosted project:
+First person only, once:
 
 ```bash
 supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 supabase db push
+npm install
+npm run setup -- --project-ref YOUR_PROJECT_REF --owner-email YOU@EXAMPLE.COM
+bash scripts/build_demo_fixture.sh
 ```
 
-Configure a verified Auth user as the owner. The existing hosted/local bootstrap scripts create development users and write a combined `.env.local`; run those only in a trusted setup environment, then separate the credentials below. Do not load that combined environment into Claude Code.
-
-| Process | Template | Credentials |
-|---|---|---|
-| Trusted broker | `example.server.env` | Supabase service key, owner identity, two distinct scoped tokens |
-| MCP adapter | `example.agent.env` | Broker URL and agent token |
-| Trusted hook runner | `example.hook.env` | Broker URL and hook token |
-| Dashboard | `example.env` | Supabase URL, publishable key, owner ID |
-
-Generate two distinct random tokens of at least 32 characters and configure them in the broker and corresponding adapters. Start the broker in its trusted service environment:
-
-```bash
-node --env-file=/absolute/private/path/server.env --import tsx src/broker.ts
-```
-
-For local development, copy the agent and hook templates into ignored `.env.agent` and `.env.hook` files and fill them in. The project MCP/hook configurations load those files. The optional explicit configurations in `demo/` use the same files:
-
-```bash
-claude --settings demo/claude-hooks.settings.json --strict-mcp-config --mcp-config demo/protected-mcp.json
-```
-
-The broker must be running first. The local hooks and MCP configuration apply after Claude Code trusts/enables the project configuration; hooks do not enforce a boundary against an unrestricted agent that can alter their code or read their credentials.
-
-Configure the dashboard environment from `example.env`, then start it:
-
-```bash
-node --env-file=/absolute/private/path/dashboard.env --import tsx src/dashboard.ts
-```
-
-The default dashboard address is `http://127.0.0.1:8787`. Sign in using the configured owner's Supabase Auth credentials. `npm run dashboard` is a local convenience for a dashboard `.env.local`; it does not configure the broker.
-
-See [PORTFOLIO_SETUP.md](PORTFOLIO_SETUP.md) for deployment boundaries and containment behavior. For production, isolate the broker and trusted hook collector from the agent's filesystem, process environment, and credentials. Two processes running as the same unrestricted OS user do not provide that isolation.
-
-## Dashboard deployment
-
-The Dockerfile starts the dashboard using environment variables; no `.env.local` is required inside the image. Supply `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `MEMORYVAULT_USER_ID`. For email sign-in and invitations, also set `MEMORYVAULT_PUBLIC_URL` to the dashboard's public HTTPS URL and add it to Supabase Auth's redirect allow list. Email delivery depends on the project's Auth configuration.
-
-The dashboard does not need a service key. The Dockerfile deploys only the dashboard; the trusted broker and hook collector require separate isolation and configuration.
-
-## Tests and evaluation
+`npm run setup` checks the schema, creates a demo Auth user, and writes the URL, keys, user ID, and generated password to `.env.local` (mode `0600`, ignored by Git). Teammates run `npm install` and get `.env.local` from whoever ran setup. Keep the secret key in server and hook processes only.
 
 ```bash
 npm run typecheck
 npm test
+node --env-file=.env.local --import tsx --test src/integration.test.ts
+node --env-file=.env.local --import tsx src/eval.ts --runs=10
+npm run dashboard
 ```
 
-The suite covers authorization rules, broker capability boundaries, usage logging, context-limit exclusions, and all migrations in disposable PostgreSQL. Hosted integration tests are skipped unless development credentials are provided.
+The dashboard listens on `http://127.0.0.1:8787`. Sign in as `demo-user@company.example` with `MEMORYVAULT_DEMO_PASSWORD` from `.env.local`. It shows pending and active memories, source evidence, rule traces, and sharing activity. Approval and rejection call Auth protected database functions; the MCP server has no approval tool.
 
-For a dedicated test database, the hosted integration tests and policy replay can be run from a trusted environment:
+Supported memory keys are `report_recipients`, `cc`, `report_format`, `writing_tone`, `timezone`, `project_context`, and `personal_preference`. Free-text project and personal memories require an explicit user request to remember the exact value; document-derived memories remain quarantined. Only the two recipient keys can authorize an additional report recipient.
+
+`send_report` is a **simulation**. It checks report recipients and records the allowed and blocked addresses in Supabase `share_attempts`; it does not send email or share a file. Memory sharing is a separate feature: the owner marks active memories **Shared**, grants an email access, and the signed-in recipient gets a read-only view of all memories the owner marked Shared. Revoking the email grant or making a memory private removes it from that view immediately. Quarantined memories cannot be shared.
+
+## Share the dashboard
+
+For email recipients on other computers, deploy the included `Dockerfile` to a public HTTPS host. Set `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `MEMORYVAULT_USER_ID`, and `MEMORYVAULT_PUBLIC_URL=https://YOUR_DASHBOARD_URL` in the host's secret/environment settings. The dashboard does not need the secret key when deployed; sharing changes use the signed-in owner's Auth token. Add that HTTPS URL to the Supabase Auth redirect allow list. The owner can then enter a recipient email in **Share with people**. Supabase sends a sign-in link, and the recipient sees the active memories marked Shared. Email delivery depends on the hosted project's Auth email configuration and limits. Keep `MEMORYVAULT_PUBLIC_URL` unset for local dashboard preview; no recipient email is sent in that mode.
+
+## Claude Code demo
+
+MemoryVault is opt in. An ordinary `claude` session in this project does not load its hooks or MCP server. When you are ready to run the demo, launch Claude Code from this project root with the environment loaded and explicitly pass the [protected MCP configuration](demo/protected-mcp.json) and [hook settings](demo/claude-hooks.settings.json):
 
 ```bash
-node --env-file=/absolute/private/path/test.env --import tsx --test src/integration.test.ts
-node --env-file=/absolute/private/path/test.env --import tsx src/eval.ts --runs=10
+set -a
+source .env.local
+set +a
+claude --settings demo/claude-hooks.settings.json --strict-mcp-config --mcp-config demo/protected-mcp.json
 ```
 
-These commands write database rows and can replace active preferences. Use a disposable development account/database, not a production vault. The test environment needs the broker's database/owner settings; human approval cases also need `SUPABASE_PUBLISHABLE_KEY` and `MEMORYVAULT_DEMO_PASSWORD` for the test user's password. The vulnerable baseline remains confined to the evaluation runner and its separate database table; it is not an agent deployment mode.
+On the first interactive demo launch, Claude Code may ask you to approve the `memoryvault` server so its tools become available.
 
-For an optional poisoned-document fixture, install `pdflatex` and `pdftotext`, then run `bash scripts/build_demo_fixture.sh`. Generated PDF/LaTeX files are ignored by Git.
+For a separate vulnerable session, launch with only the [baseline server](demo/baseline-mcp.json):
 
-## Limits and roadmap
+```bash
+set -a
+source .env.local
+set +a
+MEMORYVAULT_MODE=baseline claude --settings demo/claude-hooks.settings.json --strict-mcp-config --mcp-config demo/baseline-mcp.json
+```
 
-This implementation has one configured broker owner and one simulated action tool. It has no semantic LLM content checker or live-model attack benchmark. Lineage depends on declared parent IDs. Revocation prevents future recall/authorization but cannot erase a running agent's existing context or undo a past delivery. Start a new session after containment.
+In session 1, ask the agent to summarize `fixtures/q3_market_brief.pdf`. In a fresh session, ask it to write and share the weekly report. Compare the real Outbox rows for the two modes. The address in the PDF is synthetic. The agent must actually propose the memory for the live attack to demonstrate uptake; the deterministic replay does not measure that behavior.
 
-Next steps are tracked in [docs/ROADMAP.md](docs/ROADMAP.md). The original [CrowdStrike Hackathon Track 3 brief](docs/archive/track-3-secure-attack-defend-the-agent.md) is retained only as historical context.
+## Evidence and limits
+
+`npm test` covers the gate rules and hook classifiers. The integration test checks the database constraint, the server role's inability to call approval, human approval through Supabase Auth, and preference replacement. The replay writes real Supabase rows for five attack forms, a tool-gate backstop case, and five benign cases, ten runs each by default.
+
+This is a one-user, one-tool demo. Claude Code can run arbitrary local programs with the user's permissions, so the hook that guards `CLAUDE.md` and auto-memory files only covers recognizable `Write`/`Edit` paths and common Bash writes. The Supabase secret key is inherited by the local Claude Code process in this setup; a production deployment needs a separate gate service and credentials inaccessible to agent-executable tools. Treat the local results as evidence for this attack chain, not a general prompt injection guarantee.
