@@ -101,4 +101,4 @@ For an optional poisoned-document fixture, install `pdflatex` and `pdftotext`, t
 
 This implementation has one configured broker owner and one simulated action tool. It has no semantic LLM content checker or live-model attack benchmark. Lineage depends on declared parent IDs. Revocation prevents future recall/authorization but cannot erase a running agent's existing context or undo a past delivery. Start a new session after containment.
 
-Next steps are tracked in [docs/ROADMAP.md](docs/ROADMAP.md). The original [Track 3 brief](docs/archive/track-3-secure-attack-defend-the-agent.md) is retained only as historical context.
+Next steps are tracked in [docs/ROADMAP.md](docs/ROADMAP.md). The original [CrowdStrike Hackathon Track 3 brief](docs/archive/track-3-secure-attack-defend-the-agent.md) is retained only as historical context.
