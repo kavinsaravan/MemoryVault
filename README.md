@@ -96,9 +96,3 @@ node --env-file=/absolute/private/path/test.env --import tsx src/eval.ts --runs=
 These commands write database rows and can replace active preferences. Use a disposable development account/database, not a production vault. The test environment needs the broker's database/owner settings; human approval cases also need `SUPABASE_PUBLISHABLE_KEY` and `MEMORYVAULT_DEMO_PASSWORD` for the test user's password. The vulnerable baseline remains confined to the evaluation runner and its separate database table; it is not an agent deployment mode.
 
 For an optional poisoned-document fixture, install `pdflatex` and `pdftotext`, then run `bash scripts/build_demo_fixture.sh`. Generated PDF/LaTeX files are ignored by Git.
-
-## Limits and roadmap
-
-This implementation has one configured broker owner and one simulated action tool. It has no semantic LLM content checker or live-model attack benchmark. Lineage depends on declared parent IDs. Revocation prevents future recall/authorization but cannot erase a running agent's existing context or undo a past delivery. Start a new session after containment.
-
-Next steps are tracked in [docs/ROADMAP.md](docs/ROADMAP.md). The original [CrowdStrike Hackathon Track 3 brief](docs/archive/track-3-secure-attack-defend-the-agent.md) is retained only as historical context.
