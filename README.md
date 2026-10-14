@@ -2,7 +2,7 @@
 
 # MemoryVault
 
-MemoryVault demonstrates a persistent-memory prompt injection defense for the CrowdStrike Hack Track 3 brief. A poisoned document tries to save an unauthorized report recipient. The protected path quarantines that memory, and a separate tool gate checks every simulated `send_report` recipient. The Outbox is stored in Supabase Postgres; no email is sent.
+MemoryVault demonstrates a persistent-memory prompt injection defense for the CrowdStrike Hackathon Track 3 brief. A poisoned document tries to save an unauthorized report recipient. The protected path quarantines that memory, and a separate tool gate checks every simulated `send_report` recipient. The Outbox is stored in Supabase Postgres; no email is sent.
 
 ## Build phases
 
