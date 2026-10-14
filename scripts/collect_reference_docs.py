@@ -168,10 +168,10 @@ def process() -> None:
         rows.append(row)
 
     for name in [
-        "AIC Crowdstrike Hack.pdf",
-        "output/pdf/aic-crowdstrike-ideas-explained.pdf",
         "memoryvault-documentation.md",
-        "MEMORYVAULT_PLAN.md",
+        "README.md",
+        "PORTFOLIO_SETUP.md",
+        "docs/ROADMAP.md",
     ]:
         path = ROOT / name
         if not path.exists():

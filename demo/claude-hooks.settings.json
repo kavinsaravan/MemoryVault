@@ -7,6 +7,7 @@
             "type": "command",
             "command": "node",
             "args": [
+              "--env-file=.env.hook",
               "--import",
               "tsx",
               "src/hook.ts"
@@ -23,6 +24,7 @@
             "type": "command",
             "command": "node",
             "args": [
+              "--env-file=.env.hook",
               "--import",
               "tsx",
               "src/hook.ts"
@@ -40,6 +42,7 @@
             "type": "command",
             "command": "node",
             "args": [
+              "--env-file=.env.hook",
               "--import",
               "tsx",
               "src/hook.ts"
@@ -57,6 +60,7 @@
             "type": "command",
             "command": "node",
             "args": [
+              "--env-file=.env.hook",
               "--import",
               "tsx",
               "src/hook.ts"

@@ -7,4 +7,4 @@ COPY tsconfig.json ./
 ENV NODE_ENV=production
 ENV MEMORYVAULT_DASHBOARD_HOST=0.0.0.0
 EXPOSE 8787
-CMD ["npm", "run", "dashboard"]
+CMD ["node", "--import", "tsx", "src/dashboard.ts"]

@@ -4,6 +4,7 @@
       "type": "stdio",
       "command": "node",
       "args": [
+        "--env-file=.env.agent",
         "--import",
         "tsx",
         "src/mcp.ts"
