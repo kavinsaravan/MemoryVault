@@ -9,7 +9,7 @@ the web, execute shell commands, or send email.
 ## Setup
 
 Install dependencies with `npm ci`. Configure and start the protected broker using
-the separate server environment described in the README. Use a disposable
+the separate server environment described in [README.md](README.md). Use a disposable
 development owner/database for attack demonstrations: memory and Outbox operations
 persist real rows.
 
@@ -101,6 +101,71 @@ transaction. Check the dashboard before retrying a failed run. The host enforces
 capabilities and broker authorization; document citations, report quality and
 whether the model chooses to complete a task still require evaluation.
 
+## Deployment and credential isolation
+
+Apply all migrations in order, including
+`supabase/migrations/20261013000000_lineage_and_containment.sql`, to a development
+database before running demonstrations. Back up an existing database before
+migration; the lineage migration preserves rows and audit history.
+
+Separate processes running as the same unrestricted OS user do not isolate
+credentials. Run the database broker outside any model-controlled container,
+filesystem mounts, and process environment. Keep trusted runner and hook code
+immutable to model-controlled tools. Remove database service secrets from the
+agent's checkout when configuring an isolated deployment.
+
+The LangGraph application runner is trusted host code and holds both scoped
+broker tokens. The model receives neither token and has no tool for submitting
+provenance, approving memories, revoking memories, or issuing database queries.
+For an external assistant using MCP, configure only the agent token in the MCP
+adapter; the separate trusted hook collector holds the hook token. Keep that
+collector and its credentials outside the external agent's control.
+
+Local `.env.hook` and other ignored environment files are development
+conveniences, not a production security boundary. An unrestricted shell tool can
+read local credentials. Do not export database service keys into agent processes
+or mount the server environment into a model-controlled container. The MCP adapter
+and LangGraph runner refuse inherited Supabase service keys.
+
+The dashboard needs only the Supabase URL, publishable key, and configured owner
+ID. Review, sharing, inspection, and revocation use the signed-in human's JWT and
+RLS permissions, never the broker's service key. Start it with `npm run dashboard`
+for local development, or pass environment variables and run
+`node --import tsx src/dashboard.ts` for deployment.
+
+Use HTTPS for a remote broker; its clients reject remote plaintext URLs. The
+broker has one configured owner. Multi-user deployments require separate broker
+instances and user-scoped credentials; this version has no multi-tenant token
+registry.
+
+## Inspection, authorization, and containment
+
+The dashboard's **Inspect lineage & usage** link shows a memory's original ledger
+source, ancestors and descendants, chronological usage events, session IDs, and
+affected simulated Outbox actions. Inspection follows the signed-in user's RLS
+policies without a recent-history cutoff. Missing historical instrumentation
+cannot be reconstructed automatically.
+
+Usage events distinguish `injected`, `recalled_by_tool`, `withheld`,
+`applied_in_action`, and `blocked_in_action`. Memories excluded by the context
+limit are logged as withheld. Action events carry the Outbox ID, and receipts
+retain both applied and considered recipient memories so blocked recipients can
+be traced.
+
+**Revoke memory and descendants** atomically revokes the selected active or
+quarantined memory and its derived descendants, removes sharing flags, and
+preserves audit events. Replacing an active preference also revokes its
+descendants. Revocation prevents future retrieval and authorization; it cannot
+erase text already in a running agent's context or undo past deliveries. Start a
+new session after containment. Lineage relies on declared parent IDs; undeclared
+semantic dependencies cannot be inferred.
+
+Authorization treats quoted text, blockquotes, fenced code, inline code, and
+pasted-content blocks as lower-trust content. Inspection or translation requests
+and reported speech cannot establish direct preferences. Ambiguous requests
+require human review. The parser is conservative and deterministic, not a
+universal natural-language intent classifier.
+
 ## Validation
 
 ```bash
@@ -113,4 +178,8 @@ and an in-memory broker double using the production gate functions. It checks
 cross-session poisoning defense, legitimate preference retention, provenance
 failure, forged tool arguments, unknown document IDs, and execution budgets.
 Existing tests separately exercise the HTTP broker, stores and migrations.
-These tests need no provider API key and do not measure live-model behavior.
+Database tests verify cascading revocation across three levels, one audit event
+per revoked node, cross-user RLS, owner-only revocation, and revoked-parent
+rejection. Hosted Supabase integration tests need separate development
+credentials and otherwise skip. Local automated tests need no provider API key
+and do not measure live-model behavior.

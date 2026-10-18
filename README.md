@@ -64,7 +64,7 @@ node --env-file=.env.research-agent --import tsx src/agent-cli.ts \
   --document fixtures/benign_market_brief.md
 ```
 
-The trusted runner records document provenance before showing content to the model; its credentials are never passed to the model. Do not load a combined database environment into it. See [docs/AGENT.md](docs/AGENT.md) for the poisoned-document demo, execution limits, and preference examples.
+The trusted runner records document provenance before showing content to the model; its credentials are never passed to the model. Do not load a combined database environment into it. See [AGENT.md](AGENT.md) for the poisoned-document demo, execution limits, and preference examples.
 
 For local development, copy the agent and hook templates into ignored `.env.agent` and `.env.hook` files and fill them in. The project MCP/hook configurations load those files:
 
@@ -82,7 +82,7 @@ node --env-file=/absolute/private/path/dashboard.env --import tsx src/dashboard.
 
 The default dashboard address is `http://127.0.0.1:8787`. Sign in using the configured owner's Supabase Auth credentials. `npm run dashboard` is a local convenience for a dashboard `.env.local`; it does not configure the broker.
 
-See [PORTFOLIO_SETUP.md](PORTFOLIO_SETUP.md) for deployment boundaries and containment behavior. For production, isolate the broker and trusted hook collector from the agent's filesystem, process environment, and credentials. Two processes running as the same unrestricted OS user do not provide that isolation.
+See [AGENT.md](AGENT.md) for deployment boundaries and containment behavior. For production, isolate the broker and trusted hook collector from the agent's filesystem, process environment, and credentials. Two processes running as the same unrestricted OS user do not provide that isolation.
 
 ## Dashboard deployment
 
