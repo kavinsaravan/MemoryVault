@@ -10,10 +10,12 @@ An example attack hides an external report recipient in a document. MemoryVault 
 
 ```text
 Claude Code → MCP adapter → trusted broker → write/tool gates → Supabase
+LangGraph research agent → trusted broker → write/tool gates → Supabase
 Trusted hooks → broker → provenance ledger and session recall
 Human dashboard → Supabase Auth/RLS → review, inspection, and revocation
 ```
 
+- **LangGraph agent:** researches supplied documents, recalls preferences, proposes memories, and prepares reports using LangChain’s Anthropic integration. It calls the broker directly; MCP remains available for external assistants.
 - **Write gate:** validates typed values and checks independently recorded provenance. Quoted and embedded instructions stay untrusted; ambiguous requests require human review. Declared summaries inherit parent trust.
 - **Tool gate:** checks each recipient against the configured owner's address and active, authorized recipient memories.
 - **Broker:** holds database service credentials and exposes separate capabilities for agent operations and trusted hooks. Agent clients refuse inherited database service keys.
@@ -43,6 +45,7 @@ Configure a verified Auth user as the owner. The existing hosted/local bootstrap
 | Process | Template | Credentials |
 |---|---|---|
 | Trusted broker | `example.server.env` | Supabase service key, owner identity, two distinct scoped tokens |
+| LangGraph runner | `example.research-agent.env` | Anthropic API key, model ID, owner email, broker URL, both scoped tokens |
 | MCP adapter | `example.agent.env` | Broker URL and agent token |
 | Trusted hook runner | `example.hook.env` | Broker URL and hook token |
 | Dashboard | `example.env` | Supabase URL, publishable key, owner ID |
@@ -53,10 +56,20 @@ Generate two distinct random tokens of at least 32 characters and configure them
 node --env-file=/absolute/private/path/server.env --import tsx src/broker.ts
 ```
 
-For local development, copy the agent and hook templates into ignored `.env.agent` and `.env.hook` files and fill them in. The project MCP/hook configurations load those files. The optional explicit configurations in `demo/` use the same files:
+For the LangGraph agent, copy `example.research-agent.env` to `.env.research-agent` and fill in the provider key, model ID, owner email, broker URL, and matching scoped tokens. With the broker running:
 
 ```bash
-claude --settings demo/claude-hooks.settings.json --strict-mcp-config --mcp-config demo/protected-mcp.json
+node --env-file=.env.research-agent --import tsx src/agent-cli.ts \
+  --task "Read document-1, write a weekly report, and simulate delivery to my authorized recipients." \
+  --document fixtures/benign_market_brief.md
+```
+
+The trusted runner records document provenance before showing content to the model; its credentials are never passed to the model. Do not load a combined database environment into it. See [docs/AGENT.md](docs/AGENT.md) for the poisoned-document demo, execution limits, and preference examples.
+
+For local development, copy the agent and hook templates into ignored `.env.agent` and `.env.hook` files and fill them in. The project MCP/hook configurations load those files:
+
+```bash
+claude --settings .claude/settings.json --strict-mcp-config --mcp-config .mcp.json
 ```
 
 The broker must be running first. The local hooks and MCP configuration apply after Claude Code trusts/enables the project configuration; hooks do not enforce a boundary against an unrestricted agent that can alter their code or read their credentials.
@@ -84,7 +97,7 @@ npm run typecheck
 npm test
 ```
 
-The suite covers authorization rules, broker capability boundaries, usage logging, context-limit exclusions, and all migrations in disposable PostgreSQL. Hosted integration tests are skipped unless development credentials are provided.
+The suite covers authorization rules, broker capability boundaries, LangGraph tool loops, usage logging, context-limit exclusions, and all migrations in disposable PostgreSQL. Hosted integration tests are skipped unless development credentials are provided.
 
 For a dedicated test database, the hosted integration tests and policy replay can be run from a trusted environment:
 
