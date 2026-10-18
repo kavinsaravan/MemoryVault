@@ -11,9 +11,13 @@
     "dashboard": "node --env-file=.env.local --import tsx src/dashboard.ts",
     "eval": "tsx src/eval.ts",
     "setup": "tsx scripts/setup-hosted.ts",
-    "broker": "node --import tsx src/broker.ts"
+    "broker": "node --import tsx src/broker.ts",
+    "agent": "tsx src/agent-cli.ts"
   },
   "dependencies": {
+    "@langchain/anthropic": "^1.5.12",
+    "@langchain/core": "^1.2.18",
+    "@langchain/langgraph": "^1.5.1",
     "@modelcontextprotocol/server": "^2.3.1",
     "@supabase/supabase-js": "^2.117.3",
     "zod": "^4.0.0"

@@ -1,8 +1,3 @@
-# Generated and collected documentation for the MemoryVault work.
-/references/memoryvault/
-/memoryvault-documentation.md
-/track-3-secure-attack-defend-the-agent.md
-
 # PDFs and LaTeX source anywhere in the repository.
 *.pdf
 *.tex
@@ -24,3 +19,4 @@
 !/example.agent.env
 !/example.hook.env
 !/example.server.env
+!/example.research-agent.env
